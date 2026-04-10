@@ -67,7 +67,7 @@ Buddy MCP fixes all of this:
 
 ## 🦾 Install
 
-One command. Installs Buddy and auto-configures your CLI. No manual config needed.
+Use the installer that matches your platform.
 
 ### macOS / Linux
 
@@ -81,12 +81,16 @@ curl -fsSL https://raw.githubusercontent.com/fiorastudio/buddy/master/install.sh
 irm https://raw.githubusercontent.com/fiorastudio/buddy/master/install.ps1 | iex
 ```
 
+Do not use `install.sh` on Windows. Use `install.ps1` from PowerShell.
+
 ### What the installer does
 
 1. Clones the repo to `~/.buddy/server/`
 2. Installs dependencies and builds
-3. Auto-configures MCP for **Claude Code**, **Cursor**, and **Windsurf**
-4. Prints a success message — you're ready to go
+3. Auto-configures MCP for detected clients:
+   Claude Code, Cursor, Windsurf, and Codex CLI
+4. Injects Buddy prompt instructions for supported CLI clients
+5. Prints a success message when setup completes
 
 > **Requires:** Node.js 18+ and Git
 
