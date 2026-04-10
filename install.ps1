@@ -52,6 +52,7 @@ npm run build --quiet 2>$null
 
 $SERVER_PATH = "$INSTALL_DIR\dist\server\index.js"
 $SERVER_PATH_UNIX = $SERVER_PATH -replace '\\', '/'
+$CODEX_CONFIGURED = $false
 
 Pop-Location
 
@@ -107,6 +108,31 @@ if (Test-Path "$env:USERPROFILE\.codeium") {
   Add-BuddyToConfig "$windsurfDir\mcp_config.json" "Windsurf"
 }
 
+function Configure-Codex() {
+  try {
+    $null = Get-Command codex -ErrorAction Stop
+  } catch {
+    return
+  }
+
+  if ((codex mcp get buddy 2>$null) -and $LASTEXITCODE -eq 0) {
+    $script:CODEX_CONFIGURED = $true
+    Write-Host "  ✓ Codex CLI already configured" -ForegroundColor Green
+    return
+  }
+
+  codex mcp add buddy -- node $SERVER_PATH_UNIX *> $null
+  if ($LASTEXITCODE -eq 0) {
+    $script:CODEX_CONFIGURED = $true
+    Write-Host "  ✓ Codex CLI configured" -ForegroundColor Green
+    return
+  }
+
+  Write-Host "  ! Codex CLI detected, but MCP registration failed" -ForegroundColor Yellow
+}
+
+Configure-Codex
+
 # ── Inject buddy instructions into CLI prompt files ──
 
 $BUDDY_INSTRUCTIONS = @"
@@ -146,11 +172,19 @@ $windsurfRulesDir = "$env:USERPROFILE\.codeium\windsurf\rules"
 if (!(Test-Path $windsurfRulesDir)) { New-Item -ItemType Directory -Path $windsurfRulesDir -Force | Out-Null }
 Inject-BuddyPrompt "$windsurfRulesDir\buddy.md" "Windsurf"
 
-Inject-BuddyPrompt "$env:USERPROFILE\.codex\instructions.md" "Codex CLI"
+if ($CODEX_CONFIGURED) {
+  Inject-BuddyPrompt "$env:USERPROFILE\.codex\instructions.md" "Codex CLI"
+} else {
+  Write-Host "  ! Skipping Codex CLI prompt injection because Buddy MCP is not configured" -ForegroundColor Yellow
+}
 Inject-BuddyPrompt "$env:USERPROFILE\.gemini\GEMINI.md" "Gemini CLI"
 
 Write-Host ""
-Write-Host "  ✅ Buddy installed and configured!" -ForegroundColor Green
+if ($CODEX_CONFIGURED -or !(Get-Command codex -ErrorAction SilentlyContinue)) {
+  Write-Host "  ✅ Buddy installed and configured!" -ForegroundColor Green
+} else {
+  Write-Host "  ⚠ Buddy installed, but Codex CLI still needs MCP configuration." -ForegroundColor Yellow
+}
 Write-Host ""
 Write-Host "  Now open your AI terminal and say: `"hatch a buddy`"" -ForegroundColor Green
 Write-Host ""
